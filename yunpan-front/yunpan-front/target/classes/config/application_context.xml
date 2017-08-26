@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd">
+<!-- 配置自动加载的属性文件 -->
+		<bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+			 <property name="locations">
+				<array>
+					<value>classpath:httpclient.properties</value>
+					<value>classpath:jdbc.properties</value>
+					<value>classpath:env.properties</value>
+				</array>
+			</property>
+		</bean> 
+		
+		<!-- 自动扫描service包 -->
+		<context:component-scan base-package="com.yunpan.front.service,com.yunpan.front.dao"></context:component-scan>
+		
+		<!-- 配置c3p0数据源 -->
+		<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+			<property name="driverClass" value="${driver}"></property>
+			<property name="user" value="${user}"></property>
+			<property name="password" value="${password}"></property>
+			<property name="jdbcUrl" value="${url}"></property>
+			<property name="maxPoolSize" value="20"></property>
+			<property name="maxIdleTime" value="30"></property>
+			<property name="minPoolSize" value="5"></property>
+		</bean>
+		<!-- 配置sqlsessionFactory bean -->
+		<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+			<property name="dataSource" ref="dataSource"></property>
+			<property name="typeAliasesPackage" value="com.yunpan.front.bean" ></property>
+			<property name="configLocation" value="classpath:/config/config.xml"></property>
+			<!-- 配置映射文件的位置 -->
+			<property name="mapperLocations" >
+				<list>
+					<value>classpath*:/mapper/**/*Mapper.xml</value>
+				</list>
+			</property>
+		</bean>
+		<!-- 配置自动扫描的通用mapper class文件的位置 -->
+		<bean class="tk.mybatis.spring.mapper.MapperScannerConfigurer">
+			<property name="basePackage" value="com.yunpan.front.dao"></property>
+		</bean>
+		
+		<!-- 配置sqlSession -->
+		<bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+			<constructor-arg index="0" ref="sqlSessionFactory"></constructor-arg>
+		</bean>
+		
+		
+		<!-- 配置mybitas事务部分 -->		
+		<!-- 配置事务管理 -->
+		<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+			<property name="dataSource" ref="dataSource"></property>
+		</bean>
+		
+		<tx:advice id="tx" transaction-manager="transactionManager">
+			<tx:attributes>
+				<tx:method name="save*" read-only="false"/>
+				<tx:method name="update*" read-only="false"/>
+				<tx:method name="delete*" read-only="false"/>
+				<tx:method name="*" read-only="true"/>
+			</tx:attributes>
+		</tx:advice>
+		
+		<aop:config>
+			<aop:pointcut expression="execution(* com.yunpan.front.service.*.*(..))" id="serviceMethod"/>	
+			<aop:advisor advice-ref="tx" pointcut-ref="serviceMethod"/>	
+		</aop:config>
+
+</beans>

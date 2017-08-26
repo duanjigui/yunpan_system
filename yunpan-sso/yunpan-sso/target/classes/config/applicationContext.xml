@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+	<!-- 配置自动扫描service层 -->
+	<context:component-scan base-package="com.yunpan.sso.service"></context:component-scan>
+
+    <!-- 配置自动加载的属性文件 -->
+		<bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+			<property name="locations">
+				<array>
+					<value>classpath:jedis.properties</value>
+					<value>classpath:jdbc.properties</value>
+					<value>classpath:env.properties</value>
+				</array>
+			</property>
+		</bean> 
+	
+	    
+    <!-- jedis连接池属性配置 -->
+    <bean id="jedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig">
+        <property name="maxIdle" value="${jedis.maxIdle}"></property>
+    </bean>
+    <!-- 配置jedis连接池 -->
+    <bean id="shardedJedisPool" class="redis.clients.jedis.ShardedJedisPool">
+        <constructor-arg index="0" ref="jedisPoolConfig"></constructor-arg>
+        <constructor-arg index="1">
+            <list>
+                <bean class="redis.clients.jedis.JedisShardInfo">
+                    <constructor-arg index="0" value="${jedisShardInfo1.host}" ></constructor-arg>
+                	<constructor-arg index="1" value="${jedisShardInfo1.port}"></constructor-arg>
+                </bean>
+            </list>
+        </constructor-arg>
+    </bean>
+    
+    
+    <!-- 配置c3p0数据源 -->
+		<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+			<property name="driverClass" value="${jdbc.driver}"></property>
+			<property name="user" value="${jdbc.user}"></property>
+			<property name="password" value="${jdbc.password}"></property>
+			<property name="jdbcUrl" value="${jdbc.url}"></property>
+			<property name="maxPoolSize" value="${jdbc.maxPoolSize}"></property>
+			<property name="maxIdleTime" value="${jdbc.maxIdleTime}"></property>
+			<property name="minPoolSize" value="${jdbc.minPoolSize}"></property>
+		</bean>
+		<!-- 配置sqlsessionFactory bean -->
+		<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+			<property name="dataSource" ref="dataSource"></property>
+			<property name="typeAliasesPackage" value="com.yunpan.sso.pojo" ></property>
+			<property name="configLocation" value="classpath:/config/config.xml"></property>
+			<!-- 配置映射文件的位置 -->
+			<property name="mapperLocations" >
+				<list>
+					<value>classpath*:/mappers/**/*Mapper.xml</value>
+				</list>
+			</property>
+		</bean>
+		<!-- 配置自动扫描的通用mapper class文件的位置 -->
+		<bean class="tk.mybatis.spring.mapper.MapperScannerConfigurer">
+			<property name="basePackage" value="com.yunpan.sso.dao"></property>
+		</bean>
+		
+		<!-- 配置sqlSession -->
+		<bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+			<constructor-arg index="0" ref="sqlSessionFactory"></constructor-arg>
+		</bean>
+		
+		
+		<!-- 配置mybitas事务部分 -->		
+		<!-- 配置事务管理 -->
+		<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+			<property name="dataSource" ref="dataSource"></property>
+		</bean>
+		
+		<tx:advice id="tx" transaction-manager="transactionManager">
+			<tx:attributes>
+				<tx:method name="save*" read-only="false"/>
+				<tx:method name="update*" read-only="false"/>
+				<tx:method name="delete*" read-only="false"/>
+				<tx:method name="*" read-only="true"/>
+			</tx:attributes>
+		</tx:advice>
+		
+		<aop:config>
+			<aop:pointcut expression="execution(* com.yunpan.sso.service.*.*(..))" id="serviceMethod"/>	
+			<aop:advisor advice-ref="tx" pointcut-ref="serviceMethod"/>	
+		</aop:config>
+    
+    
+    
+	   
+</beans>

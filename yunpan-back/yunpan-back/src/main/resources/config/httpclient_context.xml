@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+	<!-- 配置httpclientUtil -->
+	<bean id="httpClientUtil" class="com.yunpan.manager.util.HttpClientUtil" factory-method="getHttpClientUtil"></bean>
+	
+	<bean id="registry"  factory-bean="httpClientUtil" factory-method="getRegistry"></bean>	
+	
+	<!-- 连接池pool -->
+	<bean id="poolingHttpClientConnectionManager" class="org.apache.http.impl.conn.PoolingHttpClientConnectionManager">
+		<constructor-arg index="0" ref="registry"></constructor-arg> 
+		<property name="maxTotal" value="${httpclient.maxTotal}" />
+		<property name="defaultMaxPerRoute" value="${httpclient.defaultMaxPerRoute}" />
+	</bean>
+	
+	<!-- httpclientBuilder构建器 -->
+	<bean id="httpClientBuilder" class="org.apache.http.impl.client.HttpClientBuilder" >
+		<property name="connectionManager" ref="poolingHttpClientConnectionManager"></property>
+	</bean>
+	<!-- httpclient -->
+	<bean class="org.apache.http.impl.client.CloseableHttpClient" factory-bean="httpClientBuilder" factory-method="build" ></bean>
+
+</beans>

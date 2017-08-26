@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.yunpan.front.dao.FileMenuManagerDao">
+	<!-- 根据条件查询菜单 -->	
+    <select id="findMenuByExample" resultType="FileMenusBean" parameterType="FileMenusBean">
+        SELECT 
+        	create_time,
+        	update_time,
+        	creater,
+        	creater_name,
+        	file_menu_id,
+        	flie_menu_name,
+        	parent_id,
+        	virthalenv_path,
+        	is_delete
+         FROM cus_file_menu
+         <where>
+              creater=#{creater}
+             <if test="create_time != null">
+                 and create_time=#{create_time}
+             </if>
+             <if test="update_time != null">
+                 and update_time=#{update_time}
+             </if>
+            
+             <if test="creater_name != null">
+                and creater_name=#{creater_name}
+             </if>
+             <if test="file_menu_id != null">
+                 and file_menu_id=#{file_menu_id}
+             </if>
+             <if test="flie_menu_name != null">
+                and flie_menu_name=#{flie_menu_name}
+             </if>
+             <if test="parent_id != null">
+                and parent_id=#{parent_id}
+             </if>
+             <if test="virthalenv_path != null">
+                 and virthalenv_path=#{virthalenv_path}
+             </if>
+             <if test="is_delete != null">
+                 and is_delete=#{is_delete}
+             </if>
+             
+         </where>
+    </select>
+    
+     
+    <select id="fetchFileMenuByName" parameterType="String"  resultType="FileMenusBean">
+        SELECT 
+        	create_time,
+        	update_time,
+        	creater,
+        	creater_name,
+        	file_menu_id,
+        	flie_menu_name,
+        	parent_id,
+        	virthalenv_path,
+        	is_delete
+         FROM cus_file_menu
+         <where>
+             flie_menu_name like '%${name}%' and is_delete=0 and creater=#{creater}
+         </where>
+        
+    </select>
+    
+
+</mapper>
